@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+require 'brigade_website_scrape'
+
+BrigadeWebsiteScrape::CLI.new(ARGV).run!
