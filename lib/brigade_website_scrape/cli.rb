@@ -13,10 +13,19 @@ end
 module BrigadeWebsiteScrape
   class CLI
     def initialize(argv)
+      @options = {}
+
+      OptionParser.new do |opts|
+        opts.banner = "Usage: #{$0} [options]"
+        opts.on('-v', '--verbose', 'Display verbose logging') do |v|
+          @options[:verbose] = true
+        end
+      end.parse!(argv)
     end
 
     def run!
       logger = Logger.new($stderr)
+      logger.level = Logger::WARN unless @options[:verbose]
       scraper = Scraper.new(logger: logger)
 
       BrigadeInfoDownloader.new.each_brigade do |brigade|
