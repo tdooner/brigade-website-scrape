@@ -1,8 +1,9 @@
 require 'csv'
-require 'vcr'
 
 module BrigadeWebsiteScrape
   class Scraper
+    IGNORE_URL_HOST_REGEX = %r{meetup\.com}
+
     def initialize(logger: Logger.new('/dev/null'))
       @sites = []
       @rules = []
@@ -13,8 +14,16 @@ module BrigadeWebsiteScrape
       @rules << { type: :xpath, name: name, xpath: xpath }
     end
 
-    def add_text_rule(name, text)
-      @rules << { type: :text, name: name, text: text }
+    # exact = can that be the only text in the element (true) or wildcard (false)
+    def add_text_rule(name, text, exact: true)
+      @rules << { type: :text, name: name, text: text, exact: exact }
+    end
+
+    # Use wildcards as asterisks in the URL. You can only use them at the
+    # beginning or end of the string.
+    # e.g. url = "*github.com/foobar"
+    def add_url_rule(name, url)
+      @rules << { type: :url, name: name, url: url }
     end
 
     def add_brigade(name, url)
@@ -22,25 +31,24 @@ module BrigadeWebsiteScrape
 
       if (redirect = check_for_redirect(url))
         @logger.warn "Website for #{name} redirected: #{redirect[0]}  -->  #{redirect[1]}"
-        @sites << [name, redirect[1]]
-      else
-        @sites << [name, url]
+        url = redirect[1]
       end
-    rescue Net::OpenTimeout
-      @logger.warn "Open Timeout hit loading #{url}"
-    rescue SocketError
-      @logger.warn "Failed to open TCP socket for #{url}"
-    rescue OpenSSL::SSL::SSLError => ex
-      @logger.warn "SSL error with #{url}: #{ex.message}"
+
+      if url.host.match?(IGNORE_URL_HOST_REGEX)
+        @logger.warn "Ignoring website for #{name} by regex: #{url}"
+        return
+      end
+
+      @sites << [name, url]
     end
 
-    def scrape_all!
+    def scrape_all!(cache: nil)
       csv = CSV.new($stdout, headers: ['rule', 'brigade', 'url', 'text', 'link'], write_headers: true)
 
       @sites.each_with_index do |(brigade_name, url), i|
         @logger.info "Beginning scrape of website (#{i + 1} / #{@sites.length}): #{url}"
 
-        VCR.use_cassette(brigade_name) do
+        cache.with_vcr_cache(brigade_name) do
           SiteScraper
             .new(url, @rules, logger: @logger)
             .scrape
