@@ -1,15 +1,15 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.7.0)
-      public_suffix (>= 2.0.2, < 5.0)
+    addressable (2.8.1)
+      public_suffix (>= 2.0.2, < 6.0)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     hashdiff (1.0.0)
     mini_portile2 (2.4.0)
     nokogiri (1.10.4)
       mini_portile2 (~> 2.4.0)
-    public_suffix (4.0.1)
+    public_suffix (5.0.0)
     safe_yaml (1.0.5)
     spidr (0.6.0)
       nokogiri (~> 1.3)
